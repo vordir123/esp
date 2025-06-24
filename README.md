@@ -1,3 +1,4 @@
+
 # ESP32 Speed Manipulator
 
 This project demonstrates using an ESP32-WROOM-32 module to
@@ -33,4 +34,18 @@ IP to view the dashboard. Use the calibration dialog to adjust the
 `pulsesPerRev` value stored in NVS. The dashboard displays current
 speed, a history graph and system stats. OTA updates are available at
 `/update`.
+
+=======
+# ESP32 Blink Beispiel
+
+Dieses Projekt enthält eine minimale Firmware, die die interne LED des ESP32 im Sekundentakt blinken lässt.
+
+## Installation
+
+Das Skript `install.sh` installiert das ESP-IDF falls erforderlich, baut die Firmware und flasht sie auf die Platine. Der serielle Port kann über die Umgebungsvariable `BOARD_PORT` angepasst werden (Standard ist `/dev/ttyUSB0`).
+
+```bash
+./install.sh
+```
+
 
