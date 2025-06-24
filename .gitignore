@@ -1,0 +1,17 @@
+# Compiled binary files
+*.bin
+*.elf
+*.hex
+*.map
+
+# PlatformIO build and dependency folders
+.pio/
+.pioenvs/
+.piolibdeps/
+
+# Local IDE settings
+.vscode/
+
+# Miscellaneous
+.DS_Store
+
