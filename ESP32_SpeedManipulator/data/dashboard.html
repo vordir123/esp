@@ -1,0 +1,1020 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speed Manipulator Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #2196F3;
+            --success-color: #4CAF50;
+            --warning-color: #FF9800;
+            --danger-color: #F44336;
+            --dark-bg: #1a1a1a;
+            --card-bg: #2a2a2a;
+            --text-color: #ffffff;
+            --text-secondary: #b0b0b0;
+            --border-color: #404040;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-color);
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: var(--primary-color);
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: pulse 2s infinite;
+        }
+
+        .status-indicator.connected {
+            background-color: var(--success-color);
+        }
+
+        .status-indicator.disconnected {
+            background-color: var(--danger-color);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 20px;
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-title {
+            font-size: 1.5em;
+            margin-bottom: 15px;
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 10px;
+        }
+
+        .speed-display {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+
+        .speed-box {
+            text-align: center;
+            padding: 20px;
+            border-radius: 8px;
+            flex: 1;
+            margin: 0 10px;
+        }
+
+        .speed-box.real {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .speed-box.manipulated {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .speed-value {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .speed-label {
+            font-size: 1em;
+            opacity: 0.9;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 12px;
+            border-radius: 6px;
+            border-left: 3px solid var(--primary-color);
+        }
+
+        .info-label {
+            font-size: 0.9em;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .info-value {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+
+        .button {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .button:hover {
+            background: #1976D2;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.4);
+        }
+
+        .button.success {
+            background: var(--success-color);
+        }
+
+        .button.success:hover {
+            background: #45a049;
+        }
+
+        .button.danger {
+            background: var(--danger-color);
+        }
+
+        .button.danger:hover {
+            background: #da190b;
+        }
+
+        .button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .input-group {
+            margin: 15px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+        }
+
+        .input-group input,
+        .input-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+            font-size: 1em;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
+        #speedChart {
+            width: 100%;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        canvas {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 6px;
+        }
+
+        .calibration-status {
+            background: var(--warning-color);
+            color: white;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            text-align: center;
+            font-weight: bold;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .warning-box {
+            background: rgba(255, 152, 0, 0.2);
+            border-left: 4px solid var(--warning-color);
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+
+        .can-messages {
+            max-height: 400px;
+            overflow-y: auto;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 6px;
+            padding: 10px;
+        }
+
+        .can-message {
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            border-left: 3px solid var(--success-color);
+        }
+
+        .can-message-id {
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .can-message-data {
+            color: var(--text-secondary);
+            margin-left: 10px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--success-color), var(--primary-color));
+            transition: width 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab {
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border: none;
+            border-radius: 6px;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .tab.active {
+            background: var(--primary-color);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+
+            .speed-display {
+                flex-direction: column;
+            }
+
+            .speed-box {
+                margin: 10px 0;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        .signal-quality-bar {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .signal-quality-bar .bar {
+            flex: 1;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .signal-quality-bar .bar-fill {
+            height: 100%;
+            transition: width 0.3s, background-color 0.3s;
+        }
+
+        .signal-quality-bar .bar-fill.good {
+            background: var(--success-color);
+        }
+
+        .signal-quality-bar .bar-fill.medium {
+            background: var(--warning-color);
+        }
+
+        .signal-quality-bar .bar-fill.bad {
+            background: var(--danger-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ Speed Manipulator Dashboard</h1>
+        <p>
+            <span class="status-indicator" id="connectionStatus"></span>
+            <span id="connectionText">Verbinde...</span>
+        </p>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" onclick="switchTab('overview')">Übersicht</button>
+        <button class="tab" onclick="switchTab('calibration')">Kalibrierung</button>
+        <button class="tab" onclick="switchTab('settings')">Einstellungen</button>
+        <button class="tab" onclick="switchTab('can')">CAN-Bus</button>
+        <button class="tab" onclick="switchTab('system')">System</button>
+    </div>
+
+    <div class="dashboard">
+        <!-- Overview Tab -->
+        <div id="overview-tab" class="tab-content active" style="grid-column: 1 / -1;">
+            <!-- Speed Display Card -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2 class="card-title">📊 Geschwindigkeitsanzeige</h2>
+                <div id="calibrationNotice" class="calibration-status" style="display: none;">
+                    KALIBRIERUNGSMODUS AKTIV - Verbleibende Zeit: <span id="calibrationCountdown">30</span>s
+                </div>
+                <div class="speed-display">
+                    <div class="speed-box real">
+                        <div class="speed-label">Echte Geschwindigkeit</div>
+                        <div class="speed-value" id="realSpeed">0.0</div>
+                        <div class="speed-label">km/h</div>
+                    </div>
+                    <div class="speed-box manipulated">
+                        <div class="speed-label">Manipulierte Geschwindigkeit</div>
+                        <div class="speed-value" id="manipulatedSpeed">0.0</div>
+                        <div class="speed-label">km/h</div>
+                    </div>
+                </div>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Skalierungsfaktor</div>
+                        <div class="info-value" id="scalingFactor">0.5455</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Max. Geschwindigkeit</div>
+                        <div class="info-value"><span id="maxSpeed">0.0</span> km/h</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Reed Sensor Pulse</div>
+                        <div class="info-value" id="pulseCount">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Signalqualität</div>
+                        <div class="signal-quality-bar">
+                            <div class="bar">
+                                <div class="bar-fill good" id="signalQualityBar" style="width: 100%;"></div>
+                            </div>
+                            <span id="signalQuality">100%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Speed History Graph -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2 class="card-title">📈 Geschwindigkeitsverlauf (60 Sekunden)</h2>
+                <div class="chart-container">
+                    <canvas id="speedChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calibration Tab -->
+        <div id="calibration-tab" class="tab-content" style="grid-column: 1 / -1;">
+            <div class="card">
+                <h2 class="card-title">🔧 Kalibrierung</h2>
+                <p style="margin-bottom: 20px; color: var(--text-secondary);">
+                    Die Kalibrierung hilft, den Geschwindigkeitssensor präzise auf Ihren Tacho abzustimmen.
+                </p>
+
+                <div class="warning-box">
+                    ⚠️ <strong>Hinweis:</strong> Fahren Sie während der Kalibrierung konstant 15 km/h für 30 Sekunden.
+                </div>
+
+                <div class="input-group">
+                    <label for="calibrationSpeed">Kalibrierungsgeschwindigkeit (km/h):</label>
+                    <input type="number" id="calibrationSpeed" value="15" min="5" max="50" step="0.5">
+                </div>
+
+                <button class="button success" id="startCalibrationBtn" onclick="startCalibration()">
+                    Kalibrierung starten
+                </button>
+
+                <div id="calibrationInputSection" style="display: none; margin-top: 20px;">
+                    <div class="input-group">
+                        <label for="displayedSpeed">Angezeigte Tacho-Geschwindigkeit (km/h):</label>
+                        <input type="number" id="displayedSpeed" step="0.1" placeholder="z.B. 14.5">
+                    </div>
+                    <button class="button success" onclick="completeCalibration()">
+                        Kalibrierung abschließen
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Tab -->
+        <div id="settings-tab" class="tab-content" style="grid-column: 1 / -1;">
+            <div class="card">
+                <h2 class="card-title">⚙️ Geschwindigkeitseinstellungen</h2>
+
+                <div class="input-group">
+                    <label for="manualScaling">Manueller Skalierungsfaktor:</label>
+                    <input type="number" id="manualScaling" step="0.0001" value="0.5455">
+                </div>
+
+                <div class="input-group">
+                    <label for="manualOffset">Offset (km/h):</label>
+                    <input type="number" id="manualOffset" step="0.1" value="0">
+                </div>
+
+                <button class="button" onclick="updateScaling()">Skalierung aktualisieren</button>
+
+                <hr style="margin: 30px 0; border-color: var(--border-color);">
+
+                <h3 style="margin-bottom: 15px;">Radkonfiguration</h3>
+
+                <div class="input-group">
+                    <label for="wheelCircumference">Radumfang (mm):</label>
+                    <input type="number" id="wheelCircumference" value="2170" min="1000" max="3000">
+                </div>
+
+                <div class="input-group">
+                    <label for="magnetsPerRev">Magnete pro Umdrehung:</label>
+                    <input type="number" id="magnetsPerRev" value="1" min="1" max="10">
+                </div>
+
+                <button class="button" onclick="updateWheelConfig()">Radkonfiguration speichern</button>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">💾 Datenexport</h2>
+                <p style="margin-bottom: 20px; color: var(--text-secondary);">
+                    Exportieren Sie Ihre Fahrdaten als CSV-Datei für die weitere Analyse.
+                </p>
+
+                <button class="button" onclick="exportSpeedData()">📥 Geschwindigkeitsdaten exportieren</button>
+                <button class="button" onclick="exportCANData()">📥 CAN-Daten exportieren</button>
+            </div>
+        </div>
+
+        <!-- CAN Tab -->
+        <div id="can-tab" class="tab-content" style="grid-column: 1 / -1;">
+            <div class="card">
+                <h2 class="card-title">🚗 CAN-Bus Nachrichten</h2>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Empfangene Nachrichten</div>
+                        <div class="info-value" id="canMessageCount">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Letzte CAN-ID</div>
+                        <div class="info-value" id="lastCANId">-</div>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-top: 20px;">
+                    <label for="canFilter">Filter nach CAN-ID (HEX, z.B. 100):</label>
+                    <input type="text" id="canFilter" placeholder="Leer lassen für alle Nachrichten">
+                </div>
+
+                <button class="button" onclick="clearCANHistory()">Historie löschen</button>
+
+                <div class="can-messages" id="canMessages">
+                    <div style="text-align: center; color: var(--text-secondary); padding: 20px;">
+                        Warten auf CAN-Nachrichten...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Tab -->
+        <div id="system-tab" class="tab-content" style="grid-column: 1 / -1;">
+            <div class="card">
+                <h2 class="card-title">🖥️ System-Statistiken</h2>
+
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Betriebszeit</div>
+                        <div class="info-value" id="uptime">0s</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">WiFi Signal</div>
+                        <div class="info-value" id="wifiSignal">- dBm</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Freier Speicher</div>
+                        <div class="info-value" id="freeHeap">- KB</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">CAN Nachrichten</div>
+                        <div class="info-value" id="totalCANMessages">0</div>
+                    </div>
+                </div>
+
+                <div class="warning-box" id="speedWarning" style="display: none;">
+                    ⚠️ <strong>Warnung:</strong> Unrealistische Geschwindigkeit erkannt!
+                </div>
+            </div>
+
+            <div class="card">
+                <h2 class="card-title">🔄 Firmware Update (OTA)</h2>
+                <p style="margin-bottom: 20px; color: var(--text-secondary);">
+                    Laden Sie eine neue Firmware-Version hoch. Das Gerät wird nach dem Update automatisch neu gestartet.
+                </p>
+
+                <input type="file" id="firmwareFile" accept=".bin" style="margin-bottom: 15px;">
+                <button class="button danger" onclick="uploadFirmware()">Firmware hochladen</button>
+
+                <div id="uploadProgress" style="display: none; margin-top: 15px;">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="uploadProgressBar" style="width: 0%;">0%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        // WebSocket connection
+        let ws;
+        let reconnectInterval;
+        let speedChart;
+        let speedHistoryData = { real: [], manipulated: [] };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            initWebSocket();
+            initChart();
+            setInterval(updateChart, 1000);
+        });
+
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.hostname}/ws`;
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function() {
+                console.log('WebSocket connected');
+                document.getElementById('connectionStatus').className = 'status-indicator connected';
+                document.getElementById('connectionText').textContent = 'Verbunden';
+                if (reconnectInterval) {
+                    clearInterval(reconnectInterval);
+                    reconnectInterval = null;
+                }
+            };
+
+            ws.onmessage = function(event) {
+                try {
+                    const data = JSON.parse(event.data);
+                    updateDashboard(data);
+                } catch (e) {
+                    console.error('Error parsing WebSocket message:', e);
+                }
+            };
+
+            ws.onclose = function() {
+                console.log('WebSocket disconnected');
+                document.getElementById('connectionStatus').className = 'status-indicator disconnected';
+                document.getElementById('connectionText').textContent = 'Getrennt';
+
+                // Reconnect after 5 seconds
+                if (!reconnectInterval) {
+                    reconnectInterval = setInterval(function() {
+                        console.log('Attempting to reconnect...');
+                        initWebSocket();
+                    }, 5000);
+                }
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+            };
+        }
+
+        function updateDashboard(data) {
+            // Update speed displays
+            document.getElementById('realSpeed').textContent = data.realSpeed.toFixed(1);
+            document.getElementById('manipulatedSpeed').textContent = data.manipulatedSpeed.toFixed(1);
+            document.getElementById('scalingFactor').textContent = data.scalingFactor.toFixed(4);
+            document.getElementById('maxSpeed').textContent = data.maxSpeed.toFixed(1);
+            document.getElementById('pulseCount').textContent = data.pulseCount;
+
+            // Update signal quality
+            const quality = data.signalQuality.toFixed(1);
+            document.getElementById('signalQuality').textContent = quality + '%';
+            const qualityBar = document.getElementById('signalQualityBar');
+            qualityBar.style.width = quality + '%';
+
+            if (quality >= 90) {
+                qualityBar.className = 'bar-fill good';
+            } else if (quality >= 70) {
+                qualityBar.className = 'bar-fill medium';
+            } else {
+                qualityBar.className = 'bar-fill bad';
+            }
+
+            // Update calibration status
+            if (data.calibrationMode) {
+                document.getElementById('calibrationNotice').style.display = 'block';
+                document.getElementById('calibrationCountdown').textContent = data.calibrationRemaining;
+                document.getElementById('startCalibrationBtn').disabled = true;
+
+                if (data.calibrationRemaining === 0) {
+                    document.getElementById('calibrationInputSection').style.display = 'block';
+                }
+            } else {
+                document.getElementById('calibrationNotice').style.display = 'none';
+                document.getElementById('startCalibrationBtn').disabled = false;
+                document.getElementById('calibrationInputSection').style.display = 'none';
+            }
+
+            // Update system stats
+            document.getElementById('uptime').textContent = formatUptime(data.uptime);
+            document.getElementById('wifiSignal').textContent = data.wifiRssi + ' dBm';
+            document.getElementById('freeHeap').textContent = (data.freeHeap / 1024).toFixed(1) + ' KB';
+            document.getElementById('totalCANMessages').textContent = data.canMessages;
+            document.getElementById('canMessageCount').textContent = data.canMessages;
+
+            // Update configuration fields
+            document.getElementById('manualScaling').value = data.scalingFactor.toFixed(4);
+            document.getElementById('manualOffset').value = data.offset.toFixed(1);
+            document.getElementById('wheelCircumference').value = data.wheelCircumference;
+            document.getElementById('magnetsPerRev').value = data.magnetsPerRevolution;
+
+            // Check for unrealistic speeds
+            if (data.realSpeed > 80) {
+                document.getElementById('speedWarning').style.display = 'block';
+            } else {
+                document.getElementById('speedWarning').style.display = 'none';
+            }
+
+            // Update chart data
+            speedHistoryData.real.push(data.realSpeed);
+            speedHistoryData.manipulated.push(data.manipulatedSpeed);
+
+            if (speedHistoryData.real.length > 60) {
+                speedHistoryData.real.shift();
+                speedHistoryData.manipulated.shift();
+            }
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('speedChart').getContext('2d');
+            speedChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: Array.from({ length: 60 }, (_, i) => -60 + i + 's'),
+                    datasets: [
+                        {
+                            label: 'Echte Geschwindigkeit',
+                            data: speedHistoryData.real,
+                            borderColor: 'rgb(102, 126, 234)',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        },
+                        {
+                            label: 'Manipulierte Geschwindigkeit',
+                            data: speedHistoryData.manipulated,
+                            borderColor: 'rgb(240, 147, 251)',
+                            backgroundColor: 'rgba(240, 147, 251, 0.1)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#b0b0b0'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: '#b0b0b0'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#ffffff'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateChart() {
+            if (speedChart && speedHistoryData.real.length > 0) {
+                speedChart.data.datasets[0].data = speedHistoryData.real;
+                speedChart.data.datasets[1].data = speedHistoryData.manipulated;
+                speedChart.update('none');
+            }
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Remove active class from all tab buttons
+            const tabButtons = document.querySelectorAll('.tab');
+            tabButtons.forEach(btn => btn.classList.remove('active'));
+
+            // Show selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function startCalibration() {
+            const speed = parseFloat(document.getElementById('calibrationSpeed').value);
+
+            fetch('/api/calibration/start', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `speed=${speed}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Calibration started:', data);
+                alert('Kalibrierung gestartet! Fahren Sie jetzt konstant ' + speed + ' km/h für 30 Sekunden.');
+            })
+            .catch(error => {
+                console.error('Error starting calibration:', error);
+                alert('Fehler beim Starten der Kalibrierung!');
+            });
+        }
+
+        function completeCalibration() {
+            const displayed = parseFloat(document.getElementById('displayedSpeed').value);
+
+            if (isNaN(displayed) || displayed <= 0) {
+                alert('Bitte geben Sie eine gültige Geschwindigkeit ein!');
+                return;
+            }
+
+            fetch('/api/calibration/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `displayed=${displayed}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Calibration completed:', data);
+                alert('Kalibrierung abgeschlossen! Neuer Skalierungsfaktor wurde gespeichert.');
+                document.getElementById('displayedSpeed').value = '';
+            })
+            .catch(error => {
+                console.error('Error completing calibration:', error);
+                alert('Fehler beim Abschließen der Kalibrierung!');
+            });
+        }
+
+        function updateScaling() {
+            const factor = parseFloat(document.getElementById('manualScaling').value);
+            const offset = parseFloat(document.getElementById('manualOffset').value);
+
+            fetch('/api/config/scaling', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `factor=${factor}&offset=${offset}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Scaling updated:', data);
+                alert('Skalierung aktualisiert!');
+            })
+            .catch(error => {
+                console.error('Error updating scaling:', error);
+                alert('Fehler beim Aktualisieren der Skalierung!');
+            });
+        }
+
+        function updateWheelConfig() {
+            const circumference = parseFloat(document.getElementById('wheelCircumference').value);
+            const magnets = parseInt(document.getElementById('magnetsPerRev').value);
+
+            fetch('/api/config/wheel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `circumference=${circumference}&magnets=${magnets}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Wheel config updated:', data);
+                alert('Radkonfiguration gespeichert!');
+            })
+            .catch(error => {
+                console.error('Error updating wheel config:', error);
+                alert('Fehler beim Speichern der Radkonfiguration!');
+            });
+        }
+
+        function exportSpeedData() {
+            window.location.href = '/api/export/speed';
+        }
+
+        function exportCANData() {
+            window.location.href = '/api/export/can';
+        }
+
+        function clearCANHistory() {
+            document.getElementById('canMessages').innerHTML = '<div style="text-align: center; color: var(--text-secondary); padding: 20px;">Historie gelöscht. Warten auf neue Nachrichten...</div>';
+        }
+
+        function uploadFirmware() {
+            const fileInput = document.getElementById('firmwareFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Bitte wählen Sie eine Firmware-Datei aus!');
+                return;
+            }
+
+            if (!confirm('Möchten Sie die Firmware wirklich aktualisieren? Das Gerät wird neu gestartet.')) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('firmware', file);
+
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    document.getElementById('uploadProgress').style.display = 'block';
+                    document.getElementById('uploadProgressBar').style.width = percentComplete + '%';
+                    document.getElementById('uploadProgressBar').textContent = percentComplete.toFixed(0) + '%';
+                }
+            });
+
+            xhr.addEventListener('load', function() {
+                if (xhr.status === 200) {
+                    alert('Firmware erfolgreich hochgeladen! Das Gerät wird neu gestartet...');
+                } else {
+                    alert('Fehler beim Hochladen der Firmware!');
+                }
+                document.getElementById('uploadProgress').style.display = 'none';
+            });
+
+            xhr.addEventListener('error', function() {
+                alert('Fehler beim Hochladen der Firmware!');
+                document.getElementById('uploadProgress').style.display = 'none';
+            });
+
+            xhr.open('POST', '/api/update');
+            xhr.send(formData);
+        }
+
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+
+            if (days > 0) {
+                return `${days}d ${hours}h ${minutes}m`;
+            } else if (hours > 0) {
+                return `${hours}h ${minutes}m ${secs}s`;
+            } else if (minutes > 0) {
+                return `${minutes}m ${secs}s`;
+            } else {
+                return `${secs}s`;
+            }
+        }
+
+        // Periodically fetch CAN history
+        setInterval(function() {
+            if (document.getElementById('can-tab').classList.contains('active')) {
+                fetch('/api/history/can')
+                    .then(response => response.json())
+                    .then(data => {
+                        const canMessages = document.getElementById('canMessages');
+                        const filter = document.getElementById('canFilter').value.toLowerCase();
+
+                        if (data.messages && data.messages.length > 0) {
+                            let html = '';
+                            data.messages.reverse().forEach(msg => {
+                                if (!filter || msg.id.toLowerCase().includes(filter)) {
+                                    html += `<div class="can-message">
+                                        <span class="can-message-id">ID: 0x${msg.id}</span>
+                                        <span class="can-message-data">DLC: ${msg.len}</span>
+                                        <br>
+                                        <span class="can-message-data">HEX: ${msg.hex}</span>
+                                        <span class="can-message-data">ASCII: ${msg.ascii}</span>
+                                    </div>`;
+                                }
+                            });
+                            if (html) {
+                                canMessages.innerHTML = html;
+                            }
+
+                            // Update last CAN ID
+                            if (data.messages.length > 0) {
+                                document.getElementById('lastCANId').textContent = '0x' + data.messages[0].id;
+                            }
+                        }
+                    })
+                    .catch(error => console.error('Error fetching CAN history:', error));
+            }
+        }, 2000);
+    </script>
+</body>
+</html>
